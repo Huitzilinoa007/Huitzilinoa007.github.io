@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="estilos.css">
+	<title>Abastecimiento de Agua</title>
+	<script>
+		let timerInterval;
+		let startTime;
+		let elapsedTime = 0;
+
+		let cLitrosLlave = 0;
+		let literInterLlave = null;
+
+		let cLitrosCalle = 0;
+		let literInterCalle = null;
+
+		let literInterTin = null;
+		let cLitrosTin = 0;
+
+		let literInterCis;
+		let cLitrosCis = 0;
+
+		function cronometro(action) {
+			if (action === "start") {
+				startTime = Date.now() - elapsedTime;
+				timerInterval = setInterval(() => {
+					elapsedTime = Date.now() - startTime;
+					let milliseconds = Math.floor((elapsedTime % 1000) / 10);
+					let seconds = Math.floor((elapsedTime / 1000) % 60);
+					let minutes = Math.floor((elapsedTime / (1000 * 60)) % 60);
+					let hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+
+					milliseconds = milliseconds < 10 ? "0" + milliseconds : milliseconds;
+					seconds = seconds < 10 ? "0" + seconds : seconds;
+					minutes = minutes < 10 ? "0" + minutes : minutes;
+					hours = hours < 10 ? "0" + hours : hours;
+
+					document.getElementById("contador-segundos").textContent = `${hours}:${minutes}:${seconds}:${milliseconds}`;
+				}, 10);
+			} else if (action === "stop") {
+				clearInterval(timerInterval);
+			} else if (action === "reset") {
+				clearInterval(timerInterval);
+				cLitros = 0;
+				document.getElementById("contador-segundos").textContent = "00:00:00:00";
+			}
+		}
+
+
+		function contadorAguaLlave() {
+			const estadoLlave = document.querySelector('input[name="llave"]:checked').value;
+			const estadoCalle = document.querySelector('input[name="calle"]:checked').value;
+			const estadoTinaco = document.querySelector('input[name="tinaco"]:checked').value;
+			const estadoCisterna = document.querySelector('input[name="cisterna"]:checked').value;
+
+			if ((estadoLlave === "Abierto") && (estadoCalle === "Abierto" || estadoCisterna === "Lleno" || estadoTinaco === "Lleno")) {
+				if (!literInterLlave) {
+					literInterLlave = setInterval(() => {
+						cLitrosLlave += 1;
+						document.getElementById("contador-litros-llave").textContent = cLitrosLlave;
+					}, 10);
+				}
+			}
+			else if ((estadoLlave === "Abierto") && (estadoCalle === "Cerrada" && estadoCisterna === "Vacío" && estadoTinaco === "Vacío")) {
+				if (!literInterLlave) {
+					clearInterval(literInterLlave);
+					literInterLlave = null;
+
+					document.getElementById("contador-litros-llave").textContent = cLitrosLlave;
+				}
+			}
+			else {
+				if (literInterLlave) {
+					clearInterval(literInterLlave);
+					literInterLlave = null;
+				}
+				document.getElementById("contador-litros-llave").textContent = cLitrosLlave;
+			}
+		}
+
+		function actuaLitCalle() {
+
+			const estadoLlave = document.querySelector('input[name="llave"]:checked').value;
+			const estadoCalle = document.querySelector('input[name="calle"]:checked').value;
+			const estadoTinaco = document.querySelector('input[name="tinaco"]:checked').value;
+			const estadoCisterna = document.querySelector('input[name="cisterna"]:checked').value;
+
+			if ((estadoCalle) === "Abierto" && (estadoLlave === "Abierto" || estadoCisterna === "Vacío" || estadoTinaco === "Vacío")) {
+				if (!literInterCalle) {
+					literInterCalle = setInterval(() => {
+						cLitrosCalle += 1;
+						document.getElementById("contador-litros-calle").textContent = cLitrosCalle;
+					}, 10);
+				}
+			}
+			else {
+				if (literInterCalle) {
+					clearInterval(literInterCalle);
+					literInterCalle = null;
+				}
+				document.getElementById("contador-litros-calle").textContent = cLitrosCalle;
+			}
+		}
+
+		function contLTinaco() {
+			const estadoLlave = document.querySelector('input[name="llave"]:checked').value;
+			const estadoCalle = document.querySelector('input[name="calle"]:checked').value;
+			const estadoTinaco = document.querySelector('input[name="tinaco"]:checked').value;
+			const estadoCisterna = document.querySelector('input[name="cisterna"]:checked').value;
+
+			if (estadoTinaco === 'Lleno') {
+				cLitrosTin = 1000;
+			}
+			if (estadoTinaco === 'Vacío') {
+				cLitrosTin = 0;
+			}
+			if (estadoLlave === 'Abierto' && estadoCalle === 'Abierto' && estadoTinaco === 'Vacío') {
+				if (!literInterTin) {
+					literInterTin = setInterval(() => {
+						if (cLitrosTin < 1000) {
+							cLitrosTin += 1;
+							document.getElementById("contador-litros-tinaco").textContent = cLitrosTin;
+							if (cLitrosTin === 1000) {
+								document.querySelector('input[name="tinaco"][value="Lleno"]').checked = true;
+								clearInterval(literInterTin);
+								literInterTin = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			} else if (estadoLlave === 'Cerrado' && estadoCalle === 'Abierto' && estadoTinaco === 'Vacío') {
+
+				if (!literInterTin) {
+					literInterTin = setInterval(() => {
+						if (cLitrosTin < 1000) {
+							cLitrosTin += 1;
+							document.getElementById("contador-litros-tinaco").textContent = cLitrosTin;
+							if (cLitrosTin === 1000) {
+								document.querySelector('input[name="tinaco"][value="Lleno"]').checked = true;
+								clearInterval(literInterTin);
+								literInterTin = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			}
+			else if (estadoLlave === 'Abierto' && estadoCalle === 'Cerrado' && estadoTinaco === 'Lleno') {
+				if (!literInterTin) {
+					literInterTin = setInterval(() => {
+						if (cLitrosTin > 0) {
+							cLitrosTin -= 1;
+							document.getElementById("contador-litros-tinaco").textContent = cLitrosTin;
+							if (cLitrosTin === 0) {
+								document.querySelector('input[name="tinaco"][value="Vacío"]').checked = true;
+								clearInterval(literInterTin);
+								literInterTin = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			} else if (estadoLlave === 'Abierto' && estadoCalle === 'Cerrado' && estadoTinaco === 'Lleno') {
+				if (!literInterTin) {
+					literInterTin = setInterval(() => {
+						if (cLitrosTin > 0) {
+							cLitrosTin -= 1;
+							document.getElementById("contador-litros-tinaco").textContent = cLitrosTin;
+							if (cLitrosTin === 0) {
+								document.querySelector('input[name="tinaco"][value="Vacío"]').checked = true;
+								clearInterval(literInterTin);
+								literInterTin = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			}
+			else {
+				if (literInterTin) {
+					clearInterval(literInterTin);
+					literInterTin = null;
+				}
+				document.getElementById("contador-litros-tinaco").textContent = cLitrosTin;
+			}
+		}
+
+		function contLCisterna() {
+			const estadoLlave = document.querySelector('input[name="llave"]:checked').value;
+			const estadoCalle = document.querySelector('input[name="calle"]:checked').value;
+			const estadoTinaco = document.querySelector('input[name="tinaco"]:checked').value;
+			const estadoCisterna = document.querySelector('input[name="cisterna"]:checked').value;
+
+			if (estadoCisterna === 'Lleno') {
+				cLitrosCis = 8000;
+			} if (estadoCisterna === 'Vacío') {
+				cLitrosCis = 0;
+			}
+
+
+			if (estadoLlave === 'Abierto' && estadoCalle === 'Abierto' && estadoTinaco === 'Lleno' && estadoCisterna === 'Vacío') {
+				if (!literInterCis) {
+					literInterCis = setInterval(() => {
+						if (cLitrosCis < 8000) {
+							cLitrosCis += 1;
+							document.getElementById("contador-litros-cisterna").textContent = cLitrosCis;
+							if (cLitrosCis === 8000) {
+								document.querySelector('input[name="cisterna"][value="Lleno"]').checked = true;
+								clearInterval(literInterCis);
+								literInterCis = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			} else if (estadoLlave === 'Cerrado' && estadoCalle === 'Abierto' && estadoTinaco === 'Lleno' && estadoCisterna === 'Vacío') {
+				if (!literInterCis) {
+					literInterCis = setInterval(() => {
+						if (cLitrosCis < 8000) {
+							cLitrosCis += 1;
+							document.getElementById("contador-litros-cisterna").textContent = cLitrosCis;
+							if (cLitrosCis === 8000) {
+								document.querySelector('input[name="cisterna"][value="Lleno"]').checked = true;
+								clearInterval(literInterCis);
+								literInterCis = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			}
+			else if (estadoLlave === 'Abierto' && estadoCalle === 'Cerrado' && estadoTinaco === 'Vacío' && estadoCisterna === 'Lleno') {
+				if (!literInterCis) {
+					literInterCis = setInterval(() => {
+						if (cLitrosCis > 0) {
+							cLitrosCis -= 1;
+							document.getElementById("contador-litros-cisterna").textContent = cLitrosCis;
+							if (cLitrosCis === 0) {
+								document.querySelector('input[name="cisterna"][value="Vacío"]').checked = true;
+								clearInterval(literInterCis);
+								literInterCis = null;
+								comprobar();
+							}
+						}
+					}, 10);
+				}
+			}
+			else {
+				if (literInterCis) {
+					clearInterval(literInterCis);
+					literInterCis = null;
+				}
+				document.getElementById("contador-litros-cisterna").textContent = cLitrosCis;
+			}
+		}
+
+
+
+
+		function comprobar() {
+			contadorAguaLlave();
+			actuaLitCalle();
+			contLTinaco();
+			contLCisterna();
+			var texto = "";
+			if (document.formulario.llave.value === "Abierto") {
+				document.formulario.estatus.value = "Llave abierta";
+
+				if (document.formulario.calle.value === "Abierto") {
+					cronometro('start');
+					texto = document.formulario.estatus.value;
+					document.formulario.estatus.value = texto + ", sale agua de la calle";
+
+					if (document.formulario.tinaco.value === "Lleno") {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", tinaco lleno";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", llenando cisterna.";
+						}
+					}
+					else {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", llenando tinaco";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							if (document.formulario.cisterna.value === "Lleno") {
+							}
+
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", llenando cisterna.";
+						}
+					}
+				} else {
+					texto = document.formulario.estatus.value;
+					document.formulario.estatus.value = texto + ", no hay agua en la calle";
+
+					if (document.formulario.tinaco.value === "Lleno") {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", tinaco lleno, usando agua del tinaco";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna vacía.";
+						}
+					}
+					else {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", tinaco vacío";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena, usando agua de la cisterna.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna vacía.";
+						}
+					}
+				}
+			} else {
+				document.formulario.estatus.value = "Llave cerrada";
+
+				if (document.formulario.calle.value === "Abierto") {
+					cronometro('start');
+					texto = document.formulario.estatus.value;
+					document.formulario.estatus.value = texto + ", hay agua en la calle";
+
+					if (document.formulario.tinaco.value === "Lleno") {
+						document.formulario.estatus.value = texto + ", tinaco lleno";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", llenando cisterna.";
+						}
+					}
+					else {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", llenando tinaco";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + "llenando cisterna.";
+						}
+					}
+				} else {
+					texto = document.formulario.estatus.value;
+					document.formulario.estatus.value = texto + ", no hay agua en la calle";
+
+					if (document.formulario.tinaco.value === "Lleno") {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", tinaco lleno";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna vacía.";
+						}
+					}
+					else {
+						texto = document.formulario.estatus.value;
+						document.formulario.estatus.value = texto + ", tinaco vacío";
+
+						if (document.formulario.cisterna.value === "Lleno") {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna llena.";
+						}
+						else {
+							texto = document.formulario.estatus.value;
+							document.formulario.estatus.value = texto + ", cisterna vacía.";
+						}
+					}
+				}
+			}
+		}
+	</script>
+</head>
+
+<body>
+	<header>
+		<img src="agua.png" alt="100">
+		<h1 id="tit">Suministro de agua</h1>
+	</header>
+	<nav>
+
+	</nav>
+	<section>
+		<form name="formulario">
+			<fieldset id="fieldset1">
+				<legend>Configuración</legend>
+				<label for="llave">Llave:</label>
+				<input type="radio" name="llave" value="Cerrado" onclick="comprobar();" checked>Cerrado
+				<input type="radio" name="llave" value="Abierto" onclick="comprobar();">Abierto
+				<br>
+				<label for="calle">Calle:</label>
+				<input type="radio" name="calle" value="Cerrado" onclick="comprobar();" checked>Cerrado
+				<input type="radio" name="calle" value="Abierto" onclick="comprobar();">Abierto
+				<br>
+				<label for="tinaco">Tinaco:</label>
+				<input type="radio" name="tinaco" value="Vacío" onclick="comprobar();" checked>Vacío
+				<input type="radio" name="tinaco" value="Lleno" onclick="comprobar();">Lleno
+				<br>
+				<label for="cisterna">Cisterna:</label>
+				<input type="radio" name="cisterna" value="Vacío" onclick="comprobar();" checked>Vacío
+				<input type="radio" name="cisterna" value="Lleno" onclick="comprobar();">Lleno
+				<br>
+			</fieldset>
+			<fieldset id="fieldset2">
+				<legend>Estado</legend>
+				<input type="text" name="estatus" placeholder="Estado" style="width: 100%;">
+				<br>
+			</fieldset>
+			<fieldset fieldset id="fieldset3">
+				<legend>Estado llave</legend>
+				<span id="contador-litros-llave">0</span><span> L.</span>
+			</fieldset>
+			<fieldset fieldset id="fieldset4">
+				<legend>Estado calle</legend>
+				<span id="contador-litros-calle">0</span><span> L.</span>
+			</fieldset>
+			<fieldset fieldset id="fieldset5">
+				<legend>Estado tinaco</legend>
+				<span id="contador-litros-tinaco">0</span><span> L.</span>
+			</fieldset>
+			<fieldset fieldset id="fieldset6">
+				<legend>Estado cisterna</legend>
+				<span id="contador-litros-cisterna">0</span><span> L.</span>
+			</fieldset>
+			<fieldset fieldset id="fieldset7">
+				<legend>Tiempo</legend>
+				<span id="contador-segundos">00:00:00:00</span>
+			</fieldset>
+		</form>
+	</section>
+	<aside>
+
+	</aside>
+	<footer>
+		<div class="footer-content">
+			<p>&copy; Huitzil Cruz Omar Alejandro| <a
+					href="huitzil.cruz.omaralejandro@gmail.com">huitzil.cruz.omaralejandro@gmail.com</a> | 5IM7</p>
+		</div>
+	</footer>
+
+</body>
+
+</html>
